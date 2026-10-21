@@ -15,12 +15,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/araujod08/App-rudimentos/issues"
   },
   "homepage": "https://github.com/araujod08/App-rudimentos#readme",
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

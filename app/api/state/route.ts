@@ -13,13 +13,16 @@ function ensureTable() {
   return ready;
 }
 
-function authorized(req: NextRequest) {
+function check(req: NextRequest) {
   const k = process.env.APP_KEY;
-  return !!k && req.headers.get("x-app-key") === k; // sem APP_KEY configurada, nega tudo
+  if (!k) return NextResponse.json({ error: "APP_KEY_not_set" }, { status: 503 });
+  if (req.headers.get("x-app-key") !== k) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  return null;
 }
 
 export async function GET(req: NextRequest) {
-  if (!authorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const denied = check(req);
+  if (denied) return denied;
   const key = req.nextUrl.searchParams.get("key") ?? "";
   if (!KEYS.has(key)) return NextResponse.json({ error: "bad key" }, { status: 400 });
   await ensureTable();
@@ -28,7 +31,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  if (!authorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const denied = check(req);
+  if (denied) return denied;
   const { key, value, t } = await req.json();
   if (!KEYS.has(key) || typeof t !== "number") return NextResponse.json({ error: "bad body" }, { status: 400 });
   await ensureTable();

@@ -11,20 +11,44 @@ function writeLocal<T>(key: string, s: Stored<T>) {
   try { localStorage.setItem(L(key), JSON.stringify(s)); } catch {}
 }
 
+let asking: Promise<string | null> | null = null;
+function askKey(wrong: boolean): Promise<string | null> {
+  // uma única janela mesmo com várias requisições ao mesmo tempo
+  asking ??= Promise.resolve()
+    .then(() => {
+      const k = window.prompt(wrong ? "Chave incorreta. Digite a APP_KEY de novo:" : "Chave de acesso do app (APP_KEY):");
+      return k ? k.trim() : null;
+    })
+    .finally(() => { asking = null; });
+  return asking;
+}
+
+let blocked = false; // depois de falhar, para de perguntar até recarregar a página
 async function api(url: string, init: RequestInit = {}): Promise<Response | null> {
+  if (blocked) return null;
   try {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
+      const stored = localStorage.getItem("appkey") || "";
       const res = await fetch(url, {
         ...init,
-        headers: { "content-type": "application/json", "x-app-key": localStorage.getItem("appkey") || "" },
+        headers: { "content-type": "application/json", "x-app-key": stored },
       });
+      if (res.status === 503) {
+        blocked = true;
+        console.error("APP_KEY não está configurada no servidor. Confira o .env.local e reinicie o npm run dev.");
+        return null;
+      }
       if (res.status !== 401) return res;
-      const k = window.prompt("Chave de acesso do app (APP_KEY):");
-      if (!k) return res;
+      if (i === 2) break;
+      const k = await askKey(i > 0 || !!stored);
+      if (!k) break;
       localStorage.setItem("appkey", k);
     }
+    localStorage.removeItem("appkey");
+    blocked = true;
+    console.error("APP_KEY recusada pelo servidor. Ela precisa ser igual à do .env.local.");
   } catch {}
-  return null; // offline
+  return null; // offline ou sem acesso
 }
 
 async function push(key: string, s: Stored<unknown>) {
