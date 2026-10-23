@@ -6,12 +6,31 @@ import { useLoop } from "../lib/useLoop";
 import { loadState, saveState } from "../lib/sync";
 
 type Mode = "fix" | "up" | "down" | "pp";
-const N = 16;
-const alt = (): Hand[] => Array.from({ length: N }, (_, i) => (i % 2 ? "L" : "R"));
+const MAX = 16; // passos guardados (4 tempos); o compasso usa os primeiros beats*4
+const alt = (): Hand[] => Array.from({ length: MAX }, (_, i) => (i % 2 ? "L" : "R"));
+const opp = (h: Hand): Hand => (h === "R" ? "L" : "R");
+
+/** Mão de uma peça num passo: a 1ª peça de mão usa a mão do passo, a 2ª usa a oposta. Bumbo não tem mão. */
+function handOf(list: number[], r: number, h: Hand): Hand | undefined {
+  if (r === KICK) return undefined;
+  return list.filter((x) => x !== KICK).indexOf(r) % 2 === 0 ? h : opp(h);
+}
+
+type Saved = { s: (number | number[])[]; h: Hand[]; b?: number };
+const normalize = (x: Saved) => ({
+  // aceita o formato antigo (um número por passo, -1 = vazio)
+  s: Array.from({ length: MAX }, (_, i): number[] => {
+    const v = x.s[i];
+    return Array.isArray(v) ? v : typeof v === "number" && v >= 0 ? [v] : [];
+  }),
+  h: Array.from({ length: MAX }, (_, i): Hand => x.h[i] ?? (i % 2 ? "L" : "R")),
+  b: [2, 3, 4].includes(x.b ?? 4) ? (x.b ?? 4) : 4,
+});
 
 export default function FillBuilder() {
-  const [steps, setSteps] = useState<number[]>(Array(N).fill(-1)); // índice da peça por passo
+  const [steps, setSteps] = useState<number[][]>(Array.from({ length: MAX }, () => []));
   const [hands, setHands] = useState<Hand[]>(alt());
+  const [beats, setBeats] = useState(4); // 2, 3 ou 4 tempos (2/4, 3/4, 4/4)
   const [bpm, setBpm] = useState(70);
   const [metro, setMetro] = useState(true);
   const [mode, setMode] = useState<Mode>("fix");
@@ -20,16 +39,17 @@ export default function FillBuilder() {
   const bpmRef = useRef(bpm); bpmRef.current = bpm;
   const loops = useRef(0);
   const dir = useRef(1);
+  const N = beats * 4;
 
   useEffect(() => {
-    loadState<{ s: number[]; h: Hand[] } | null>("fill", null, "fill40", (x) => {
-      if (x) { setSteps(x.s); setHands(x.h); }
+    loadState<Saved | null>("fill", null, "fill40", (x) => {
+      if (x) { const n = normalize(x); setSteps(n.s); setHands(n.h); setBeats(n.b); }
       setLoaded(true);
     });
   }, []);
   useEffect(() => {
-    if (loaded) saveState("fill", { s: steps, h: hands });
-  }, [steps, hands, loaded]);
+    if (loaded) saveState("fill", { s: steps, h: hands, b: beats });
+  }, [steps, hands, beats, loaded]);
 
   const changeBpm = (v: number) => {
     const n = Math.max(40, Math.min(220, v));
@@ -52,50 +72,65 @@ export default function FillBuilder() {
         changeBpm(v);
       }
     }
-    if (steps[s] >= 0) drum(steps[s], t, steps[s] === KICK ? undefined : hands[s]);
+    for (const r of steps[s]) drum(r, t, handOf(steps[s], r, hands[s])); // notas simultâneas
     if (metro && s % 4 === 0) click(t, s === 0);
   });
 
   const begin = () => { loops.current = 0; dir.current = 1; start(); };
-  const toggleHand = (s: number) => setHands(hands.map((h, i) => (i === s ? (h === "R" ? "L" : "R") : h)));
+  const changeBeats = (b: number) => { stop(); setBeats(b); };
+  const toggleHand = (s: number) => setHands(hands.map((h, i) => (i === s ? opp(h) : h)));
   const toggle = (r: number, s: number) => {
-    const turningOn = steps[s] !== r;
-    if (turningOn && !playing) drum(r, getCtx().currentTime, r === KICK ? undefined : hands[s]);
-    setSteps(steps.map((p, i) => (i === s ? (turningOn ? r : -1) : p)));
+    const cur = steps[s];
+    if (cur.includes(r)) {
+      setSteps(steps.map((l, i) => (i === s ? l.filter((x) => x !== r) : l)));
+      return;
+    }
+    if (r !== KICK && cur.filter((x) => x !== KICK).length >= 2) return; // no máximo uma peça por mão
+    const next = [...cur, r].sort((a, b) => a - b);
+    if (!playing) drum(r, getCtx().currentTime, handOf(next, r, hands[s]));
+    setSteps(steps.map((l, i) => (i === s ? next : l)));
   };
   const example = () => {
     const h = "RLRRLRLL";
-    setHands(Array.from({ length: N }, (_, i) => h[i % 8] as Hand));
-    setSteps([5, 5, 2, 2, 3, 3, 4, 4, 5, 5, 2, 2, 3, 3, 4, 4]);
+    setBeats(4);
+    setHands(Array.from({ length: MAX }, (_, i) => h[i % 8] as Hand));
+    setSteps([5, 5, 2, 2, 3, 3, 4, 4, 5, 5, 2, 2, 3, 3, 4, 4].map((r) => [r]));
   };
   const now = (s: number) => (current >= 0 && current % N === s ? " now" : "");
   const num = (k: keyof typeof cfg) => (
     <input type="number" value={cfg[k]} onChange={(e) => setCfg({ ...cfg, [k]: +e.target.value })} />
   );
+  const view = steps.slice(0, N);
 
   return (
     <div className="card">
       <div className="name">🎛 Criador de viradas</div>
-      <div className="mu">Toque numa peça para colocar uma nota naquele passo (16 semicolcheias = 4 tempos). Toque em D/E no topo para trocar a mão.</div>
+      <div className="mu">
+        Toque numa peça para colocar a nota naquele passo. Um passo pode ter várias peças (por exemplo, bumbo + prato,
+        ou uma peça em cada mão). Toque em D/E no topo para trocar a mão.
+      </div>
       <div className="fg" style={{ gridTemplateColumns: `44px repeat(${N}, 34px)` }}>
         <div />
-        {steps.map((p, s) => {
-          const kick = p === KICK;
+        {view.map((list, s) => {
+          const hp = list.filter((x) => x !== KICK);
+          const kickOnly = list.length > 0 && hp.length === 0;
+          const txt = kickOnly ? "K" : hp.length > 1 ? `${label(hands[s])}+${label(opp(hands[s]))}` : label(hands[s]);
           return (
-            <button key={s} className={`hd ${kick ? "K" : hands[s]}${now(s)}`} onClick={() => !kick && toggleHand(s)}>
-              {kick ? "K" : label(hands[s])}
+            <button key={s} className={`hd ${kickOnly ? "K" : hands[s]}${now(s)}`} onClick={() => !kickOnly && toggleHand(s)}>
+              {txt}
             </button>
           );
         })}
         {PIECES.map((name, r) => (
           <Fragment key={r}>
             <div className="pl">{name}</div>
-            {steps.map((p, s) => {
-              const on = p === r;
+            {view.map((list, s) => {
+              const on = list.includes(r);
+              const h = handOf(list, r, hands[s]);
               return (
                 <button key={s} className={`c${s % 4 === 0 ? " b" : ""}${now(s)}`}
                   style={on ? { background: PIECE_COLORS[r] } : undefined} onClick={() => toggle(r, s)}>
-                  {on ? (r === KICK ? "K" : label(hands[s])) : ""}
+                  {on ? (h ? label(h) : "K") : ""}
                 </button>
               );
             })}
@@ -105,8 +140,13 @@ export default function FillBuilder() {
       <div className="row">
         <button className="p" onClick={() => (playing ? stop() : begin())}>{playing ? "■ Parar" : "▶ Tocar loop"}</button>
         <button className={metro ? "on" : ""} onClick={() => setMetro(!metro)}>Metrônomo</button>
+        <select value={beats} onChange={(e) => changeBeats(+e.target.value)} aria-label="Compasso">
+          <option value={2}>Compasso 2/4</option>
+          <option value={3}>Compasso 3/4</option>
+          <option value={4}>Compasso 4/4</option>
+        </select>
         <button onClick={example}>Exemplo paradiddle</button>
-        <button onClick={() => setSteps(Array(N).fill(-1))}>Limpar</button>
+        <button onClick={() => setSteps(Array.from({ length: MAX }, () => []))}>Limpar</button>
       </div>
       <div className="row">
         <button onClick={() => changeBpm(bpm - 4)}>−</button>

@@ -22,7 +22,7 @@ Instalável como app, funciona offline e sincroniza seu progresso na nuvem.
 | 🥁 | **40 rudimentos** | Rolls, Paradiddles, Flams e Drags, com a sequência de mãos **D / E** e ornamentos (flam/drag) em tamanho menor |
 | ⏱️ | **Metrônomo e loop** | BPM de 40 a 220, subdivisão em colcheias, tercinas ou semicolcheias, com a nota atual destacada |
 | 🏆 | **Recordes e domínio** | Salve o melhor BPM de cada rudimento e marque os que já domina (`X/40`) |
-| 🎛️ | **Criador de viradas** | Grade por peças da bateria, 16 passos, com mão D/E por passo |
+| 🎛️ | **Criador de viradas** | Grade por peças da bateria, compasso de 2, 3 ou 4 tempos, notas simultâneas e mão D/E por passo |
 | 📈 | **Velocidade progressiva** | Acelerar, desacelerar ou subir e descer o BPM a cada X loops, entre um mínimo e um máximo |
 | 🔊 | **Sons por mão** | Direita mais aguda e à direita, esquerda mais grave e à esquerda (melhor com fone) |
 | 📲 | **PWA** | Instalável, abre offline, com botão de instalar e aviso de nova versão |
@@ -32,7 +32,7 @@ Instalável como app, funciona offline e sincroniza seu progresso na nuvem.
 
 ## 🎛️ O criador de viradas
 
-Cada coluna é uma semicolcheia (4 tempos no total). Toque numa peça para colocar a nota naquele passo; a linha do topo mostra a mão. O **bumbo** é tocado com o pé e aparece como **K**.
+Cada coluna é uma semicolcheia, e o compasso pode ter **2, 3 ou 4 tempos** (2/4, 3/4, 4/4). Toque numa peça para colocar a nota naquele passo; a linha do topo mostra a mão. Um passo aceita **várias peças ao mesmo tempo** (por exemplo, bumbo + prato, ou uma peça em cada mão, que aparece como `D+E`). O **bumbo** é tocado com o pé e aparece como **K**.
 
 ```text
          D   E   D   E   D   E   D   E  ...   ← mãos (toque para trocar)
@@ -209,7 +209,7 @@ Não há arquivos de áudio: tudo é sintetizado pela **Web Audio API** (oscilad
 ## 🗺️ Ideias para o futuro
 
 - [ ] Biblioteca de viradas com nome (salvar várias)
-- [ ] Compassos de 2 ou 3 tempos e notas simultâneas (bumbo com prato)
+- [x] Compassos de 2, 3 e 4 tempos e notas simultâneas (bumbo com prato)
 - [ ] Gráfico de evolução do BPM por rudimento
 - [ ] Metrônomo avulso, sem padrão tocando
 - [ ] Login de verdade (Auth.js) para uso com mais pessoas
