@@ -10,6 +10,21 @@ const MAX = 16; // passos guardados (4 tempos); o compasso usa os primeiros beat
 const alt = (): Hand[] => Array.from({ length: MAX }, (_, i) => (i % 2 ? "L" : "R"));
 const opp = (h: Hand): Hand => (h === "R" ? "L" : "R");
 
+const TOMS = [5, 2, 3, 4]; // caixa, tom 10, tom 12, surdo 14
+/** Distribui grupos de `size` passos pelas peças, um grupo a cada `every` passos (-1 = vazio). */
+const spread = (size: number, every: number) =>
+  Array.from({ length: MAX }, (_, i) => (i % every < size ? TOMS[Math.floor(i / every) % TOMS.length] : -1));
+
+/** Rudimentos prontos: h = mão de cada passo (16), p = peça de cada passo, distribuída entre caixa e toms. */
+const PRESETS: Record<string, { h: string; p: number[] }> = {
+  "Paradiddle": { h: "RLRRLRLL".repeat(2), p: spread(2, 2) },
+  "Single Stroke Roll": { h: "RL".repeat(8), p: spread(2, 2) },
+  "Double Stroke Roll": { h: "RRLL".repeat(4), p: spread(2, 2) },
+  // flam e drag aproximados: cada nota de ornamento ocupa o passo anterior à nota principal
+  "Flam": { h: "LRRRRLRRLRRRRLRR", p: spread(2, 4) }, // cada flam numa peça
+  "Drag": { h: "LLRRRRLL".repeat(2), p: spread(3, 4) }, // cada drag numa peça
+};
+
 /** Mão de uma peça num passo: a 1ª peça de mão usa a mão do passo, a 2ª usa a oposta. Bumbo não tem mão. */
 function handOf(list: number[], r: number, h: Hand): Hand | undefined {
   if (r === KICK) return undefined;
@@ -31,6 +46,7 @@ export default function FillBuilder() {
   const [steps, setSteps] = useState<number[][]>(Array.from({ length: MAX }, () => []));
   const [hands, setHands] = useState<Hand[]>(alt());
   const [beats, setBeats] = useState(4); // 2, 3 ou 4 tempos (2/4, 3/4, 4/4)
+  const [preset, setPreset] = useState("");
   const [bpm, setBpm] = useState(70);
   const [metro, setMetro] = useState(true);
   const [mode, setMode] = useState<Mode>("fix");
@@ -90,11 +106,14 @@ export default function FillBuilder() {
     if (!playing) drum(r, getCtx().currentTime, handOf(next, r, hands[s]));
     setSteps(steps.map((l, i) => (i === s ? next : l)));
   };
-  const example = () => {
-    const h = "RLRRLRLL";
+  const applyPreset = (name: string) => {
+    const pr = PRESETS[name];
+    stop();
+    setPreset(name);
+    if (!pr) return;
     setBeats(4);
-    setHands(Array.from({ length: MAX }, (_, i) => h[i % 8] as Hand));
-    setSteps([5, 5, 2, 2, 3, 3, 4, 4, 5, 5, 2, 2, 3, 3, 4, 4].map((r) => [r]));
+    setHands(Array.from({ length: MAX }, (_, i) => pr.h[i] as Hand));
+    setSteps(pr.p.map((r) => (r >= 0 ? [r] : [])));
   };
   const now = (s: number) => (current >= 0 && current % N === s ? " now" : "");
   const num = (k: keyof typeof cfg) => (
@@ -145,7 +164,10 @@ export default function FillBuilder() {
           <option value={3}>Compasso 3/4</option>
           <option value={4}>Compasso 4/4</option>
         </select>
-        <button onClick={example}>Exemplo paradiddle</button>
+        <select value={preset} onChange={(e) => applyPreset(e.target.value)} aria-label="Rudimento">
+          <option value="">Rudimento…</option>
+          {Object.keys(PRESETS).map((n) => <option key={n} value={n}>{n}</option>)}
+        </select>
         <button onClick={() => setSteps(Array.from({ length: MAX }, () => []))}>Limpar</button>
       </div>
       <div className="row">
