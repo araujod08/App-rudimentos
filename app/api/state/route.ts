@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const KEYS = new Set(["progress", "fill"]);
+const KEYS = new Set(["progress", "fill", "fills"]);
 const db = () => neon(process.env.DATABASE_URL!);
 
 let ready: Promise<unknown> | null = null;

@@ -42,11 +42,17 @@ const normalize = (x: Saved) => ({
   b: [2, 3, 4].includes(x.b ?? 4) ? (x.b ?? 4) : 4,
 });
 
+type SavedFill = { id: string; name: string; s: number[][]; h: Hand[]; b: number; bpm: number };
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
 export default function FillBuilder() {
   const [steps, setSteps] = useState<number[][]>(Array.from({ length: MAX }, () => []));
   const [hands, setHands] = useState<Hand[]>(alt());
   const [beats, setBeats] = useState(4); // 2, 3 ou 4 tempos (2/4, 3/4, 4/4)
   const [preset, setPreset] = useState("");
+  const [lib, setLib] = useState<SavedFill[]>([]); // biblioteca de viradas salvas
+  const [name, setName] = useState("");
+  const [activeId, setActiveId] = useState("");
   const [bpm, setBpm] = useState(70);
   const [metro, setMetro] = useState(true);
   const [mode, setMode] = useState<Mode>("fix");
@@ -106,6 +112,28 @@ export default function FillBuilder() {
     if (!playing) drum(r, getCtx().currentTime, handOf(next, r, hands[s]));
     setSteps(steps.map((l, i) => (i === s ? next : l)));
   };
+  useEffect(() => { loadState<SavedFill[]>("fills", [], undefined, setLib); }, []);
+  const saveLib = (next: SavedFill[]) => { setLib(next); saveState("fills", next); };
+  const saveFill = () => {
+    const n = name.trim();
+    if (!n) return;
+    const item = { name: n, s: steps, h: hands, b: beats, bpm: bpmRef.current };
+    const old = lib.find((x) => x.name.toLowerCase() === n.toLowerCase()); // mesmo nome = atualiza
+    const id = old ? old.id : newId();
+    saveLib(old ? lib.map((x) => (x.id === id ? { ...item, id } : x)) : [...lib, { ...item, id }]);
+    setActiveId(id);
+  };
+  const loadFill = (f: SavedFill) => {
+    stop();
+    setBeats(f.b); setHands(f.h); setSteps(f.s); changeBpm(f.bpm);
+    setName(f.name); setActiveId(f.id); setPreset("");
+  };
+  const deleteFill = (f: SavedFill) => {
+    if (!window.confirm(`Excluir a virada "${f.name}"?`)) return;
+    saveLib(lib.filter((x) => x.id !== f.id));
+    if (activeId === f.id) setActiveId("");
+  };
+
   const applyPreset = (name: string) => {
     const pr = PRESETS[name];
     stop();
@@ -186,6 +214,28 @@ export default function FillBuilder() {
         </select>
       </div>
       <div className="row mu">de {num("min")} até {num("max")} BPM, passo {num("inc")} a cada {num("every")} loops</div>
+
+      <div className="libhead">📚 Minhas viradas</div>
+      <div className="row">
+        <input type="text" value={name} maxLength={40} placeholder="Nome da virada"
+          onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveFill()} />
+        <button className="p" onClick={saveFill} disabled={!name.trim()}>
+          {lib.some((x) => x.name.toLowerCase() === name.trim().toLowerCase()) ? "Atualizar" : "Salvar"}
+        </button>
+      </div>
+      {lib.length === 0 ? (
+        <div className="mu">Nenhuma virada salva ainda. Monte uma na grade, dê um nome e toque em Salvar.</div>
+      ) : (
+        lib.map((f) => (
+          <div key={f.id} className={`it${f.id === activeId ? " s" : ""}`} onClick={() => loadFill(f)}>
+            <div className="t">
+              <div>{f.name}</div>
+              <div className="st">{f.b}/4 · {f.bpm} BPM</div>
+            </div>
+            <button aria-label={`Excluir ${f.name}`} onClick={(e) => { e.stopPropagation(); deleteFill(f); }}>✕</button>
+          </div>
+        ))
+      )}
     </div>
   );
 }

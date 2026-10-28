@@ -2,7 +2,7 @@
 // Conflito: vence a alteração mais recente (campo t).
 type Stored<T> = { v: T; t: number };
 const L = (k: string) => `sync:${k}`;
-const KEYS = ["progress", "fill"];
+const KEYS = ["progress", "fill", "fills"];
 
 function readLocal<T>(key: string): Stored<T> | null {
   try { return JSON.parse(localStorage.getItem(L(key)) || "null"); } catch { return null; }

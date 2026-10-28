@@ -22,6 +22,7 @@ Instalável como app, funciona offline e sincroniza seu progresso na nuvem.
 | 🥁 | **40 rudimentos** | Rolls, Paradiddles, Flams e Drags, com a sequência de mãos **D / E** e ornamentos (flam/drag) em tamanho menor |
 | ⏱️ | **Metrônomo e loop** | BPM de 40 a 220, subdivisão em colcheias, tercinas ou semicolcheias, com a nota atual destacada |
 | 🏆 | **Recordes e domínio** | Salve o melhor BPM de cada rudimento e marque os que já domina (`X/40`) |
+| 📚 | **Biblioteca de viradas** | Salve várias viradas com nome (grade, compasso e BPM), carregue, atualize ou exclua; tudo sincroniza com o Neon |
 | 🎛️ | **Criador de viradas** | Grade por peças da bateria, compasso de 2, 3 ou 4 tempos, notas simultâneas e mão D/E por passo |
 | 📈 | **Velocidade progressiva** | Acelerar, desacelerar ou subir e descer o BPM a cada X loops, entre um mínimo e um máximo |
 | 🔊 | **Sons por mão** | Direita mais aguda e à direita, esquerda mais grave e à esquerda (melhor com fone) |
@@ -157,7 +158,7 @@ A API cria a tabela sozinha na primeira chamada. Se preferir criar antes, rode o
 
 ```sql
 CREATE TABLE IF NOT EXISTS app_state (
-  key   text   PRIMARY KEY,   -- "progress" | "fill"
+  key   text   PRIMARY KEY,   -- "progress" | "fill" | "fills"
   value jsonb  NOT NULL,
   t     bigint NOT NULL
 );
@@ -208,7 +209,7 @@ Não há arquivos de áudio: tudo é sintetizado pela **Web Audio API** (oscilad
 
 ## 🗺️ Ideias para o futuro
 
-- [ ] Biblioteca de viradas com nome (salvar várias)
+- [x] Biblioteca de viradas com nome (salvar várias)
 - [x] Compassos de 2, 3 e 4 tempos e notas simultâneas (bumbo com prato)
 - [ ] Gráfico de evolução do BPM por rudimento
 - [ ] Metrônomo avulso, sem padrão tocando
