@@ -63,11 +63,11 @@ export function drum(r: number, t: number, h?: Hand) {
   else tone(p, t, 130, 42, 0.22, 1);
 }
 
-export function click(t: number, accent: boolean) {
+export function click(t: number, accent: boolean, vol = 1) {
   const c = getCtx(), o = c.createOscillator(), g = c.createGain();
   o.type = "square";
   o.frequency.value = accent ? 1500 : 1000;
-  g.gain.setValueAtTime(0.6, t);
+  g.gain.setValueAtTime(0.6 * vol, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
   o.connect(g).connect(c.destination);
   o.start(t); o.stop(t + 0.08);

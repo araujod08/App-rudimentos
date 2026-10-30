@@ -49,3 +49,10 @@ button:disabled{opacity:.5;cursor:default}
 .chart .dt{fill:var(--ac)}
 .chart .best{fill:var(--card);stroke:var(--ac);stroke-width:2.5}
 .chart text{fill:var(--mu);font-size:10px}
+.bigbpm{font-size:64px;font-weight:800;text-align:center;line-height:1;margin-top:14px}
+.bigbpm .mu{font-size:16px;font-weight:400}
+.dots{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);transition:.06s}
+.dot.first{border-color:var(--ac)}
+.dot.on{background:var(--l);border-color:var(--l)}
+.dot.first.on{background:var(--ac);border-color:var(--ac)}
