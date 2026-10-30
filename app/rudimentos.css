@@ -43,3 +43,9 @@ input[type=number]{width:64px;font:inherit;color:var(--tx);background:var(--card
 input[type=text]{flex:1;min-width:140px;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
 button:disabled{opacity:.5;cursor:default}
 .libhead{font-weight:700;margin-top:16px;padding-top:12px;border-top:1px solid var(--bd)}
+.chart{width:100%;height:auto;margin-top:8px}
+.chart .gl{stroke:var(--bd);stroke-width:1}
+.chart .ln{fill:none;stroke:var(--ac);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart .dt{fill:var(--ac)}
+.chart .best{fill:var(--card);stroke:var(--ac);stroke-width:2.5}
+.chart text{fill:var(--mu);font-size:10px}

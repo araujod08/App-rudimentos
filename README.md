@@ -21,7 +21,8 @@ Instalável como app, funciona offline e sincroniza seu progresso na nuvem.
 |---|---|---|
 | 🥁 | **40 rudimentos** | Rolls, Paradiddles, Flams e Drags, com a sequência de mãos **D / E** e ornamentos (flam/drag) em tamanho menor |
 | ⏱️ | **Metrônomo e loop** | BPM de 40 a 220, subdivisão em colcheias, tercinas ou semicolcheias, com a nota atual destacada |
-| 🏆 | **Recordes e domínio** | Salve o melhor BPM de cada rudimento e marque os que já domina (`X/40`) |
+| 🏆 | **Recordes e domínio** | Registre o BPM de cada treino, acompanhe o melhor e marque os que já domina (`X/40`) |
+| 📈 | **Gráfico de evolução** | Linha do BPM registrado ao longo do tempo, por rudimento, com o melhor destacado |
 | 📚 | **Biblioteca de viradas** | Salve várias viradas com nome (grade, compasso e BPM), carregue, atualize ou exclua; tudo sincroniza com o Neon |
 | 🎛️ | **Criador de viradas** | Grade por peças da bateria, compasso de 2, 3 ou 4 tempos, notas simultâneas e mão D/E por passo |
 | 📈 | **Velocidade progressiva** | Acelerar, desacelerar ou subir e descer o BPM a cada X loops, entre um mínimo e um máximo |
@@ -108,7 +109,8 @@ sequenceDiagram
 │   ├── api/state/route.ts        # GET/PUT do estado no Neon
 │   ├── components/
 │   │   ├── RudimentPlayer.tsx    # player, lista e recordes
-│   │   ├── FillBuilder.tsx       # criador de viradas
+│   │   ├── FillBuilder.tsx       # criador de viradas e biblioteca
+│   │   ├── BpmChart.tsx          # gráfico de evolução (SVG)
 │   │   └── RegisterSW.tsx        # service worker, instalar e atualizar
 │   └── lib/
 │       ├── data.ts               # os 40 rudimentos, peças e tipos
@@ -211,7 +213,7 @@ Não há arquivos de áudio: tudo é sintetizado pela **Web Audio API** (oscilad
 
 - [x] Biblioteca de viradas com nome (salvar várias)
 - [x] Compassos de 2, 3 e 4 tempos e notas simultâneas (bumbo com prato)
-- [ ] Gráfico de evolução do BPM por rudimento
+- [x] Gráfico de evolução do BPM por rudimento
 - [ ] Metrônomo avulso, sem padrão tocando
 - [ ] Login de verdade (Auth.js) para uso com mais pessoas
 

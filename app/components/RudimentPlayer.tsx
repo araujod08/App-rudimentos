@@ -4,8 +4,9 @@ import { CATEGORIES, RUDIMENTS, label, parseSticking } from "../lib/data";
 import { click, hit } from "../lib/audio";
 import { useLoop } from "../lib/useLoop";
 import { loadState, saveState } from "../lib/sync";
+import BpmChart, { type Pt } from "./Bpmchart";
 
-type Prog = Record<number, { best: number; done: boolean }>;
+type Prog = Record<number, { best: number; done: boolean; hist?: Pt[] }>;
 
 export default function RudimentPlayer() {
   const [sel, setSel] = useState(0);
@@ -34,6 +35,11 @@ export default function RudimentPlayer() {
   const [name, cat, sticking] = RUDIMENTS[sel];
   const p = get(sel);
   const doneCount = Object.values(prog).filter((x) => x.done).length;
+  // cada registro entra no histórico; o recorde só sobe se o BPM for maior
+  const log = () => {
+    const hist = [...(p.hist ?? []), { t: Date.now(), bpm }].slice(-200);
+    save({ ...prog, [sel]: { ...p, best: Math.max(p.best, bpm), hist } });
+  };
   let k = 0;
 
   return (
@@ -73,10 +79,12 @@ export default function RudimentPlayer() {
           <input type="range" min={40} max={220} value={bpm} onChange={(e) => setB(+e.target.value)} />
         </div>
         <div className="row">
-          <button onClick={() => bpm > p.best && save({ ...prog, [sel]: { ...p, best: bpm } })}>🏆 Salvar BPM como recorde</button>
+          <button onClick={log}>🏆 Registrar BPM</button>
           <button onClick={() => save({ ...prog, [sel]: { ...p, done: !p.done } })}>{p.done ? "★ Dominado" : "☆ Dominado"}</button>
           <span className="mu">{p.best ? `Recorde: ${p.best} BPM` : "Sem recorde ainda"}</span>
         </div>
+        <div className="libhead">📈 Evolução do BPM</div>
+        <BpmChart hist={p.hist ?? []} />
       </div>
 
       <div className="chips">
